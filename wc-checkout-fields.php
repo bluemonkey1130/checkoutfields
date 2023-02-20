@@ -8,9 +8,9 @@ Author: George Hawthorne
 /******
  *
  * CUSTOM FIELDS
- *
+ * Add the custom fields to the product list item in the checkout
  ******/
-// Add the custom fields to the product list item in the checkout
+
 add_filter('woocommerce_checkout_cart_item_quantity', 'add_suburb_checkout_field_to_product_list_item', 1, 3);
 function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart_item, $cart_item_key)
 {
@@ -29,6 +29,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 'type' => 'text',
                 'label' => __('First Name', $domain),
                 'class' => array('save-data'),
+                'placeholder' => 'Enter your First Name',
                 'required' => true,
                 'value' => isset($cart_item['item_first_name']) ? $cart_item['item_first_name'] : '',
             ));
@@ -36,6 +37,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 'type' => 'text',
                 'label' => __('Last Name', $domain),
                 'class' => array('save-data'),
+                'placeholder' => 'Enter your Last Name',
                 'required' => true,
                 'value' => isset($cart_item['item_last_name']) ? $cart_item['item_last_name'] : '',
             ));
@@ -43,22 +45,38 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
         </div>
         <div class="address">
             <?php
-            $output .= woocommerce_form_field('item_street_adress_' . $cart_item_key, array(
+            $output .= woocommerce_form_field('item_street_address_' . $cart_item_key, array(
                 'type' => 'text',
                 'label' => __('Street Address', $domain),
                 'class' => array('save-data'),
                 'placeholder' => 'House number and street name',
                 'required' => true,
-                'value' => isset($cart_item['item_street_adress']) ? $cart_item['item_street_adress'] : '',
+                'value' => isset($cart_item['item_street_address']) ? $cart_item['item_street_address'] : '',
             ));
-            $output .= woocommerce_form_field('item_street_adress_two_' . $cart_item_key, array(
+            $output .= woocommerce_form_field('item_street_address_two_' . $cart_item_key, array(
                 'type' => 'text',
                 'label' => '',
                 'class' => array('save-data'),
                 'placeholder' => 'Apartment, suite, unit, etc. (optional)',
-                'value' => isset($cart_item['item_street_adress_two']) ? $cart_item['item_street_adress_two'] : '',
+                'value' => isset($cart_item['item_street_address_two']) ? $cart_item['item_street_address_two'] : '',
             ));
-
+            $output .= woocommerce_form_field('item_post_code_' . $cart_item_key, array(
+                'type' => 'text',
+                'label' => __('Post Code', $domain),
+                'class' => array('save-data'),
+                'placeholder' => 'Enter your Post Code',
+                'required' => true,
+                'value' => isset($cart_item['item_post_code']) ? $cart_item['item_post_code'] : '',
+            ));
+            $output .= woocommerce_form_field('phone_number_' . $cart_item_key, array(
+                'type' => 'tel',
+                'label' => __('Recipient Phone Number', $domain),
+                'class' => array('save-data'),
+                'required' => true,
+                'placeholder' => 'Enter the recipient\'s phone number',
+                'validate' => array('phone'),
+                'value' => isset($cart_item['phone_number']) ? $cart_item['phone_number'] : '',
+            ));
             $field_name = $cart_item_key;
             $chosen_suburb = WC()->session->get('chosen_suburb');
             $chosen = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
@@ -164,26 +182,10 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 'label' => 'Select the suburb:',
                 'required' => true
             ), $chosen);
-            $output .= woocommerce_form_field('item_post_code_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => __('Post Code', $domain),
-                'class' => array('save-data'),
-                'required' => true,
-                'value' => isset($cart_item['item_post_code']) ? $cart_item['item_post_code'] : '',
-            ));
-            $output .= woocommerce_form_field('phone_number_' . $cart_item_key, array(
-                'type' => 'tel',
-                'label' => __('Recipient Phone Number', $domain),
-                'class' => array('save-data'),
-                'required' => true,
-                'placeholder' => 'Enter the recipient\'s phone number',
-                'validate' => array('phone'),
-                'value' => isset($cart_item['phone_number']) ? $cart_item['phone_number'] : '',
-            ));
             ?>
         </div>
         <div class="delivery">
-            <h4>Delivery Date</h4>
+            <h4>Delivery Information</h4>
             <div class="date-field_<?php echo $cart_item_key ?>">
                 <?php
                 $output .= woocommerce_form_field('item_delivery_date_' . $cart_item_key, array(
@@ -200,6 +202,8 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 <?php
                 $delivery_field_name = 'delivery_option_' . $cart_item_key;
                 $delivery_field_id = 'delivery-option-' . $cart_item_key;
+                $chosen_delivery_type = WC()->session->get('chosen_delivery_option');
+                $chosen_delivery = isset($chosen_delivery_type[$cart_item_key]) ? $chosen_delivery_type[$cart_item_key] : '';
                 $output .= woocommerce_form_field($delivery_field_name, array(
                     'type' => 'select',
                     'class' => array('delivery-type'),
@@ -207,13 +211,13 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                         '' => 'Select Delivery Type',
                         'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
                         'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
-                        'am_delivery' => sprintf(__("AM Specific Delivery ($15.00)", $domain), strip_tags(wc_price(15.00))),
-                        'pm_delivery' => sprintf(__("PM Specific Delivery ($10.00)", $domain), strip_tags(wc_price(10.00))),
-                        'express_delivery' => sprintf(__("Express Delivery ($25.00)", $domain), strip_tags(wc_price(25.00))),
+                        'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
+                        'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
+                        'express_delivery' => sprintf(__("Express Delivery (%s)", $domain), strip_tags(wc_price(25.00))),
                     ),
                     'label' => __('Delivery Type', $domain),
                     'required' => true,
-                ), '');
+                ), $chosen_delivery);
                 ?>
             </div>
         </div>
@@ -283,6 +287,10 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     $(this).val(savedValue);
                 }
             });
+            $("#<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+            $("#house_type_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+
         });
         jQuery(document).ready(function () {
             $.ajax({
@@ -306,8 +314,9 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     var minDate = hours < 13 ? 0 : 1;
                     // Define options for the datepicker
                     var allowedWeekends = ['2023-05-14'];
+                    var disabledDates = ["2023-02-22", "2023-03-01", "2023-03-03"];
                     // Set first option to disabled
-                    $("#delivery-options_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                    $("#delivery_option_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
                     // Set options
                     var options = {
                         minDate: minDate,
@@ -323,7 +332,9 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                                 } else {
                                     return [false];
                                 }
-                            } else {
+                            } else if (disabledDates.includes(dateString)) {
+                                return [false];
+                            }else {
                                 return [true];
                             }
                         },
@@ -332,8 +343,14 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
 
                             $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
 
+                            // LOCAL STORAGE
                             // Get the selected date
                             var selectedDate = $(this).datepicker('getDate');
+                            // Format the selected date
+                            var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
+                            // Store selected date in localStorage
+                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
+
                             var currentDate = now;
 
                             // Check if selected date is today and it's after 09:00
@@ -353,22 +370,19 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                                 $('#delivery-options_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
                                 $('#delivery-options_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
                             }
-                            // LOCAL STORAGE
-                            // Store selected date in localStorage
-                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', dateText);
                         }
                     };
 
                     // Initialize the datepicker with the specified options
                     var $datePicker = $(".datepicker_<?php echo $cart_item_key; ?> input");
                     $($datePicker).datepicker(options);
+
                     $datePicker.datepicker("setDate", selectedDate);
                     if (selectedDate) {
                         $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
                     }
                 }
             });
-
         });
 
     </script>
@@ -713,12 +727,12 @@ function add_custom_fields_to_order_items($item, $cart_item_key, $values, $order
         $last_name = sanitize_text_field($posted_data['item_last_name_' . $cart_item_key]);
         $item->add_meta_data('Last Name', $last_name);
     }
-    if (isset($posted_data['item_street_adress_' . $cart_item_key])) {
-        $street_address = sanitize_text_field($posted_data['item_street_adress_' . $cart_item_key]);
+    if (isset($posted_data['item_street_address_' . $cart_item_key])) {
+        $street_address = sanitize_text_field($posted_data['item_street_address_' . $cart_item_key]);
         $item->add_meta_data('Street Address', $street_address);
     }
-    if (isset($posted_data['item_street_adress_two_' . $cart_item_key])) {
-        $street_address = sanitize_text_field($posted_data['item_street_adress_two_' . $cart_item_key]);
+    if (isset($posted_data['item_street_address_two_' . $cart_item_key])) {
+        $street_address = sanitize_text_field($posted_data['item_street_address_two_' . $cart_item_key]);
         $item->add_meta_data('Street Address Two', $street_address);
     }
     if (isset($posted_data['item_post_code_' . $cart_item_key])) {
@@ -767,48 +781,48 @@ function validate_custom_fields()
 
         $first_name = isset($_POST['item_first_name_' . $cart_item_key]) ? sanitize_text_field($_POST['item_first_name_' . $cart_item_key]) : '';
         if (empty($first_name) && !in_array('item_first_name', $added_notices)) {
-            wc_add_notice(__('Please enter a First Name for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please enter a <strong>First Name</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'item_first_name';
         }
         $last_name = isset($_POST['item_last_name_' . $cart_item_key]) ? sanitize_text_field($_POST['item_last_name_' . $cart_item_key]) : '';
         if (empty($last_name) && !in_array('item_last_name', $added_notices)) {
-            wc_add_notice(__('Please enter a Last Name for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please enter a <strong>Last Name</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'item_last_name';
         }
-        $street_address = isset($_POST['item_street_adress_' . $cart_item_key]) ? sanitize_text_field($_POST['item_street_adress_' . $cart_item_key]) : '';
-        if (empty($street_address) && !in_array('item_street_adress', $added_notices)) {
-            wc_add_notice(__('Please enter a Street Address for each address.', 'woocommerce'), 'error');
-            $added_notices[] = 'item_street_adress';
+        $street_address = isset($_POST['item_street_address_' . $cart_item_key]) ? sanitize_text_field($_POST['item_street_address_' . $cart_item_key]) : '';
+        if (empty($street_address) && !in_array('item_street_address', $added_notices)) {
+            wc_add_notice(__('Please enter a <strong>Street Address</strong> for each cart item.', 'woocommerce'), 'error');
+            $added_notices[] = 'item_street_address';
         }
         $post_code = isset($_POST['item_post_code_' . $cart_item_key]) ? sanitize_text_field($_POST['item_post_code_' . $cart_item_key]) : '';
         if (empty($post_code) && !in_array('item_post_code', $added_notices)) {
-            wc_add_notice(__('Please enter a Post Code for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please enter a <strong>Post Code</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'item_post_code';
         }
         $suburb = isset($_POST[$cart_item_key]) ? sanitize_text_field($_POST[$cart_item_key]) : '';
         if (empty($suburb) && !in_array('suburb', $added_notices)) {
-            wc_add_notice(__('Please select a Suburb for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please select a <strong>Suburb</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'suburb';
         }
         $phone_number = isset($_POST['phone_number_' . $cart_item_key]) ? sanitize_text_field($_POST['phone_number_' . $cart_item_key]) : '';
         if (empty($phone_number) && !in_array('phone_number', $added_notices)) {
-            wc_add_notice(__('Please enter a Phone Number for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please enter a <strong>Phone Number</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'phone_number';
         }
         $delivery_date = isset($_POST['item_delivery_date_' . $cart_item_key]) ? sanitize_text_field($_POST['item_delivery_date_' . $cart_item_key]) : '';
         if (empty($delivery_date) && !in_array('item_delivery_date', $added_notices)) {
-            wc_add_notice(__('Please select a Delivery Date for each address.', 'woocommerce'), 'error');
+            wc_add_notice(__('Please select a <strong>Delivery Date</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'item_delivery_date';
         }
 
         $courier_instruct = isset($_POST['instruct_courier_to_' . $cart_item_key]) ? sanitize_text_field($_POST['instruct_courier_to_' . $cart_item_key]) : '';
         if (empty($courier_instruct) && !in_array('instruct_courier_to', $added_notices)) {
-            wc_add_notice(__('Please select Courier Intructions for each address', 'woocommerce'), 'error');
+            wc_add_notice(__('Please select <strong>Courier Instructions</strong> for each cart item', 'woocommerce'), 'error');
             $added_notices[] = 'instruct_courier_to';
         }
         $house_type = isset($_POST['house_type_' . $cart_item_key]) ? sanitize_text_field($_POST['house_type_' . $cart_item_key]) : '';
         if (empty($house_type) && !in_array('house_type', $added_notices)) {
-            wc_add_notice(__('Please select House Type for each address', 'woocommerce'), 'error');
+            wc_add_notice(__('Please select <strong>Property Type</strong> for each cart item', 'woocommerce'), 'error');
             $added_notices[] = 'house_type';
         }
     }
