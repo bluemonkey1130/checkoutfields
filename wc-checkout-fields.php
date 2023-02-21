@@ -10,7 +10,6 @@ Author: George Hawthorne
  * CUSTOM FIELDS
  * Add the custom fields to the product list item in the checkout
  ******/
-
 add_filter('woocommerce_checkout_cart_item_quantity', 'add_suburb_checkout_field_to_product_list_item', 1, 3);
 function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart_item, $cart_item_key)
 {
@@ -22,6 +21,47 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
     $output = '';
     ?>
     <div class="wrap-fields">
+        <div class="delivery">
+            <h4>Delivery Information</h4>
+            <div class="date-field_<?php echo $cart_item_key ?>">
+                <?php
+                // Output the delivery date field with required and save-data class
+                $output .= woocommerce_form_field('item_delivery_date_' . $cart_item_key, array(
+                    'type' => 'text',
+                    'label' => __('Delivery Date', $domain),
+                    'required' => true,
+                    'class' => array('save-data', 'datepicker', 'datepicker_' . $cart_item_key),
+                    'value' => isset($cart_item['item_delivery_date']) ? $cart_item['item_delivery_date'] : '',
+                    'autocomplete' => 'off',
+                    'custom_attributes' => array(
+                        'data-cart-item-id' => $cart_item_key,
+                    ),
+                ));
+                ?>
+            </div>
+            <div class="delivery-options-container_<?php echo $cart_item_key ?> " style="display: none;">
+                <?php
+                $delivery_field_name = 'delivery_option_' . $cart_item_key;
+                $delivery_field_id = 'delivery-option-' . $cart_item_key;
+                $chosen_delivery_type = WC()->session->get('chosen_delivery_option');
+                $chosen_delivery = isset($chosen_delivery_type[$cart_item_key]) ? $chosen_delivery_type[$cart_item_key] : '';
+                $output .= woocommerce_form_field($delivery_field_name, array(
+                    'type' => 'select',
+                    'class' => array('delivery-type'),
+                    'options' => array(
+                        '' => 'Select Delivery Type',
+                        'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
+                        'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
+                        'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
+                        'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
+                        'express_delivery' => sprintf(__("Express Delivery (%s)", $domain), strip_tags(wc_price(25.00))),
+                    ),
+                    'label' => __('Delivery Type', $domain),
+                    'required' => true,
+                ), $chosen_delivery);
+                ?>
+            </div>
+        </div>
         <h4>Recipient Information</h4>
         <div class="name">
             <?php
@@ -43,7 +83,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
             ));
             ?>
         </div>
-        <div class="address">
+        <div class="address" id="address_<?php echo $cart_item_key ?>">
             <?php
             $output .= woocommerce_form_field('item_street_address_' . $cart_item_key, array(
                 'type' => 'text',
@@ -86,7 +126,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 'class' => array('suburb-dropdown'),
                 'options' => array(
                     '' => __("Choose a suburb option ..."),
-                    'Shop Pickup' => __("Shop Pickup", $domain),
                     'Aeroglen' => sprintf(__("Aeroglen (%s)", $domain), strip_tags(wc_price(17.50))),
                     'Aloomba' => sprintf(__("Aloomba (%s)", $domain), strip_tags(wc_price(40.00))),
                     'Arriga' => sprintf(__("Arriga (%s)", $domain), strip_tags(wc_price(45.00))),
@@ -178,52 +217,17 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     'Yarrabah' => sprintf(__("Yarrabah (%s)", $domain), strip_tags(wc_price(45.00))),
                     'Yorkeys Knob' => sprintf(__("Yorkeys Knob (%s)", $domain), strip_tags(wc_price(27.50))),
                     'Yungaburra' => sprintf(__("Yungaburra (%s)", $domain), strip_tags(wc_price(40.00))),
+                    'Not Applicable' => 'Not Applicable',
                 ),
                 'label' => 'Select the suburb:',
                 'required' => true
             ), $chosen);
             ?>
         </div>
-        <div class="delivery">
-            <h4>Delivery Information</h4>
-            <div class="date-field_<?php echo $cart_item_key ?>">
-                <?php
-                $output .= woocommerce_form_field('item_delivery_date_' . $cart_item_key, array(
-                    'type' => 'text',
-                    'label' => __('Delivery Date', $domain),
-                    'required' => true,
-                    'class' => array('save-data', 'datepicker', 'datepicker_' . $cart_item_key),
-                    'value' => isset($cart_item['item_delivery_date']) ? $cart_item['item_delivery_date'] : '',
-                    'autocomplete' => 'off',
-                ));
-                ?>
-            </div>
-            <div class="delivery-options-container_<?php echo $cart_item_key ?> " style="display: none;">
-                <?php
-                $delivery_field_name = 'delivery_option_' . $cart_item_key;
-                $delivery_field_id = 'delivery-option-' . $cart_item_key;
-                $chosen_delivery_type = WC()->session->get('chosen_delivery_option');
-                $chosen_delivery = isset($chosen_delivery_type[$cart_item_key]) ? $chosen_delivery_type[$cart_item_key] : '';
-                $output .= woocommerce_form_field($delivery_field_name, array(
-                    'type' => 'select',
-                    'class' => array('delivery-type'),
-                    'options' => array(
-                        '' => 'Select Delivery Type',
-                        'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
-                        'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
-                        'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
-                        'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
-                        'express_delivery' => sprintf(__("Express Delivery (%s)", $domain), strip_tags(wc_price(25.00))),
-                    ),
-                    'label' => __('Delivery Type', $domain),
-                    'required' => true,
-                ), $chosen_delivery);
-                ?>
-            </div>
-        </div>
-        <div class="extra-info">
-            <h4>Property Infomation</h4>
+        <div class="extra-info" id="extra-info_<?php echo $cart_item_key ?>">
+            <h4>Property Information</h4>
             <?php
+
             $output .= woocommerce_form_field('instruct_courier_to_' . $cart_item_key, array(
                 'type' => 'select',
                 'label' => __('If the recipient is not there?', $domain),
@@ -234,6 +238,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     'leave-at-the-front-door' => __('Leave at the front door'),
                     'leave-at-reception' => __('Leave at reception'),
                     'return-to-florist-shop-fees-may-apply' => __('Return to florist shop (fees may apply)', $domain),
+                    'Not Applicable' => 'Not Applicable',
                 ),
             ));
             $output .= woocommerce_form_field('house_type_' . $cart_item_key, array(
@@ -245,6 +250,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     '' => __('Please select', $domain),
                     'yes' => __('Yes'),
                     'no' => __('No'),
+                    'Not Applicable' => 'Not Applicable',
                 ),
             ));
             ?>
@@ -264,60 +270,96 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
     <script>
         // Pre-populate input fields with the saved value from local storage
         jQuery(document).ready(function () {
+            // Save the user's input values in local storage
             $('.save-data input').each(function () {
+
+                // Get the name of the input field
                 var inputName = $(this).attr('name');
+
+                // Attach an event listener to the input field
                 $(this).on('input', function () {
+
+                    // Get the value of the input field
                     var inputValue = $(this).val();
+
+                    // Store the value in localStorage using the input field name as the key
                     localStorage.setItem(inputName, inputValue);
                 });
+
+                // Get the saved value from localStorage
                 var savedValue = localStorage.getItem(inputName);
+
+                // If a saved value exists, set it as the value of the input field
                 if (savedValue !== null && savedValue !== '') {
                     $(this).val(savedValue);
                 }
             });
+
+            // Save the user's select values in local storage
             $('.save-data select').each(function () {
+
+                // Get the name of the select element
                 var inputName = $(this).attr('name');
-                // console.log(inputName);
+
+                // Attach an event listener to the select element
                 $(this).on('change', function () {
+
+                    // Store the selected value in local storage
                     var inputValue = $(this).val();
                     localStorage.setItem(inputName, inputValue);
                 });
+
+                // Check if a value has been saved in local storage for this select element
                 var savedValue = localStorage.getItem(inputName);
                 if (savedValue !== null && savedValue !== '') {
+
+                    // Set the value of the select element to the saved value
                     $(this).val(savedValue);
                 }
             });
+
+            // Disable the first option of the delivery options, house type, and courier instructions selects
             $("#<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
             $("#house_type_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+            $("#house_type_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
 
-        });
-        jQuery(document).ready(function () {
+            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
+
+            $("#suburb_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
+
+            // Make an AJAX request to get the current time from a remote API
             $.ajax({
                 url: 'https://worldtimeapi.org/api/timezone/Australia/Brisbane',
                 dataType: 'json',
                 success: function (data) {
+                    // Parse the time data from the API response
                     now = new Date(data.datetime);
                     hours = now.getHours();
                     minutes = now.getMinutes();
                 },
                 error: function () {
+                    // If the AJAX request fails, log an error message and fall back to using the local machine time
                     console.log('Error getting current time from World Time API. Falling back to local machine time.');
                     now = new Date();
                     hours = now.getHours();
                     minutes = now.getMinutes();
                 },
                 complete: function () {
+                    // Get the selected date from local storage
                     var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
 
                     // Set the minDate option of the datepicker based on the current time
                     var minDate = hours < 13 ? 0 : 1;
-                    // Define options for the datepicker
+
+                    // Define options for the jQuery UI datepicker
                     var allowedWeekends = ['2023-05-14'];
                     var disabledDates = ["2023-02-22", "2023-03-01", "2023-03-03"];
-                    // Set first option to disabled
+
+                    // Disable the first option of the delivery option select
                     $("#delivery_option_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-                    // Set options
+
+                    // Set the options for the jQuery UI datepicker
                     var options = {
                         minDate: minDate,
                         firstDay: 1, // Start the week on Monday
@@ -334,26 +376,21 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                                 }
                             } else if (disabledDates.includes(dateString)) {
                                 return [false];
-                            }else {
+                            } else {
                                 return [true];
                             }
                         },
                         onSelect: function (dateText, inst) {
                             // Show the delivery options select when a date is selected
-
                             $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
 
-                            // LOCAL STORAGE
-                            // Get the selected date
+                            // Store the selected date in local storage
                             var selectedDate = $(this).datepicker('getDate');
-                            // Format the selected date
                             var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
-                            // Store selected date in localStorage
                             localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
 
-                            var currentDate = now;
-
                             // Check if selected date is today and it's after 09:00
+                            var currentDate = now;
                             if (selectedDate.getDate() === currentDate.getDate() &&
                                 currentDate.getHours() >= 9) {
                                 $('#delivery-options_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
@@ -373,15 +410,22 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                         }
                     };
 
-                    // Initialize the datepicker with the specified options
+                    // Select the input field for the datepicker
                     var $datePicker = $(".datepicker_<?php echo $cart_item_key; ?> input");
+
+                    // Initialize the datepicker with the specified options
                     $($datePicker).datepicker(options);
 
+                    // Set the previously selected date as the default value for the datepicker
                     $datePicker.datepicker("setDate", selectedDate);
+
+                    // Show the delivery options select if a date has been selected previously
                     if (selectedDate) {
                         $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
                     }
                 }
+            }).done(function (data) {
+                showHideFields();
             });
         });
 
@@ -392,7 +436,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
     // Return the product quantity with the suburb field
     return $product_quantity . $output;
 }
-
 
 /******
  *
@@ -430,7 +473,6 @@ function checkout_suburb_script()
                     });
                 });
             });
-
         </script>
     <?php
     endif;
@@ -593,23 +635,6 @@ function add_delivery_fee($cart)
     }
 }
 
-//add_filter('woocommerce_cart_item_subtotal', 'update_subtotal_for_each_item', 10, 3);
-//function update_subtotal_for_each_item($subtotal, $cart_item, $cart_item_key)
-//{
-//    $chosen_suburb = WC()->session->get('chosen_suburb');
-//    $selected_suburb = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
-//    $cost = 0;
-//    switch ($selected_suburb) {
-//    }
-//
-//    $product = $cart_item['data'];
-//    $price = $product->get_price();
-//    $updated_price = $price + $cost;
-//    $updated_subtotal = wc_price($updated_price * $cart_item['quantity']);
-//
-//    return $updated_subtotal;
-//}
-
 /******
  *
  * DELIVERY PRIORITY FEE
@@ -627,6 +652,80 @@ function checkout_delivery_script()
         <script type="text/javascript">
             jQuery(function ($) {
                 "use strict";
+
+                function showHideFields() {
+                    // Your code to be executed when an AJAX request is completed
+                    $('select[id^="delivery_option_"]').each(function () {
+                        // Get the cart item key
+                        var cart_item_key = $(this).attr('id').split('delivery_option_')[1];
+
+                        // Get the custom fields for the cart item
+                        var $address = $('#address_' + cart_item_key);
+                        var $extra_info = $('#extra-info_' + cart_item_key);
+                        var $street_address_field = $('input[name="item_street_address_' + cart_item_key + '"]');
+                        var $post_code_field = $('input[name="item_post_code_' + cart_item_key + '"]');
+                        var $phone_number_field = $('input[name="phone_number_' + cart_item_key + '"]');
+                        var $delivery_date_field = $('input[name="item_delivery_date_' + cart_item_key + '"]');
+
+                        // Initialize the delivery option value
+                        var delivery_option_value = $(this).val();
+                        localStorage.setItem('delivery_option_value_' + cart_item_key, delivery_option_value);
+
+                        // Show or hide the custom fields based on the delivery option value post-ajax
+                        if (delivery_option_value === 'am_delivery' ||
+                            delivery_option_value === 'pm_delivery' ||
+                            delivery_option_value === 'express_delivery' ||
+                            delivery_option_value === 'standard_delivery') {
+
+                            $address.css('display', 'grid');
+                            $extra_info.css('display', 'grid');
+
+                            $street_address_field.val(localStorage.getItem('item_street_address_'+cart_item_key) ? localStorage.getItem('item_street_address_'+cart_item_key) : '');
+                            $post_code_field.val(localStorage.getItem('item_post_code_'+cart_item_key) ? localStorage.getItem('item_post_code_'+cart_item_key) : '');
+                            $phone_number_field.val(localStorage.getItem('phone_number_'+cart_item_key) ? localStorage.getItem('phone_number_'+cart_item_key) : '');
+                            $delivery_date_field.val(localStorage.getItem('selectedDate_'+cart_item_key) ? localStorage.getItem('selectedDate_'+cart_item_key) : '');
+
+                            $("#instruct_courier_to_"+cart_item_key+" option:first-child").attr("selected", "selected");
+                            $("#house_type_"+cart_item_key+" option:first-child").attr("selected", "selected");
+                            $("#"+cart_item_key+" option:first-child").attr("selected", "selected");
+
+
+                        } else if (delivery_option_value === 'shop_pickup'){
+
+                            $address.css('display', 'none');
+                            $extra_info.css('display', 'none');
+
+                            var placeholderText = 'Not Applicable'
+                            $street_address_field.val(placeholderText);
+                            $post_code_field.val(placeholderText);
+                            $phone_number_field.val(placeholderText);
+                            $delivery_date_field.val(placeholderText);
+
+                            $("#instruct_courier_to_"+cart_item_key+" option:last-child").attr("selected", "selected");
+                            $("#house_type_"+cart_item_key+" option:last-child").attr("selected", "selected");
+                            $("#"+cart_item_key+" option:last-child").attr("selected", "selected");
+
+                            // $.ajax({
+                            //     type: 'POST',
+                            //     url: wc_checkout_params.ajax_url,
+                            //     data: {
+                            //         action: 'disable_custom_fields_validation'
+                            //     },
+                            //     success: function (response) {
+                            //         console.log('Custom fields validation disabled');
+                            //     },
+                            //     error: function (xhr, status, error) {
+                            //         console.log('Error disabling custom fields validation');
+                            //     }
+                            // });
+
+                        }
+                    });
+                }
+
+                window.showHideFields = showHideFields;
+
+
                 $('form.checkout').on('change', '.delivery-type', function () {
                     var cart_item_key = $(this).find('select').attr('name');
                     var delivery_option = $(this).find('select').val();
@@ -641,18 +740,18 @@ function checkout_delivery_script()
                         },
                         success: function (result) {
                             $('body').trigger('update_checkout');
-                            // var selectedDate = localStorage.getItem('selectedDate_'.content);
-                            // console.log(selectedDate);
+
                         },
                         error: function (error) {
                             console.log(error); // just for testing | TO BE REMOVED
                         }
                     });
+
                 });
             });
-
         </script>
     <?php
+
     endif;
 }
 
@@ -668,6 +767,7 @@ function woo_get_delivery_option_ajax_data()
         $chosen_delivery_option[$cart_item_key] = $delivery_option;
         WC()->session->set('chosen_delivery_option', $chosen_delivery_option);
         echo json_encode($delivery_option);
+
     }
     die(); // Always at the end (to avoid server error 500)
 }
@@ -705,6 +805,7 @@ function add_delivery_priority_fee($cart)
     if ($delivery_fee > 0) {
         $cart->add_fee(__('Delivery Priority Fee', $domain), $delivery_fee);
     }
+
 }
 
 /******
@@ -769,7 +870,7 @@ function add_custom_fields_to_order_items($item, $cart_item_key, $values, $order
     }
 }
 
-    // Add validation to the custom fields during checkout
+// Add validation to the custom fields during checkout
 add_action('woocommerce_checkout_process', 'validate_custom_fields');
 function validate_custom_fields()
 {
@@ -779,6 +880,16 @@ function validate_custom_fields()
     // Loop through each cart item and validate the fields
     foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
 
+        $delivery_date = isset($_POST['item_delivery_date_' . $cart_item_key]) ? sanitize_text_field($_POST['item_delivery_date_' . $cart_item_key]) : '';
+        if (empty($delivery_date) && !in_array('item_delivery_date', $added_notices)) {
+            wc_add_notice(__('Please select a <strong>Delivery Date</strong> for each cart item.', 'woocommerce'), 'error');
+            $added_notices[] = 'item_delivery_date';
+        }
+        $delivery_type = isset($_POST['delivery_option_' . $cart_item_key]) ? sanitize_text_field($_POST['delivery_option_' . $cart_item_key]) : '';
+        if (empty($delivery_type) && !in_array('delivery_option', $added_notices)) {
+            wc_add_notice(__('Please select a <strong>Delivery Type</strong> for each cart item.', 'woocommerce'), 'error');
+            $added_notices[] = 'delivery_option';
+        }
         $first_name = isset($_POST['item_first_name_' . $cart_item_key]) ? sanitize_text_field($_POST['item_first_name_' . $cart_item_key]) : '';
         if (empty($first_name) && !in_array('item_first_name', $added_notices)) {
             wc_add_notice(__('Please enter a <strong>First Name</strong> for each cart item.', 'woocommerce'), 'error');
@@ -789,6 +900,20 @@ function validate_custom_fields()
             wc_add_notice(__('Please enter a <strong>Last Name</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'item_last_name';
         }
+
+    }
+}
+
+// Add validation to the custom fields during checkout
+add_action('woocommerce_checkout_process', 'validate_custom_delivery_fields');
+function validate_custom_delivery_fields()
+{
+    // Array to keep track of added notices
+    $added_notices = array();
+
+    // Loop through each cart item and validate the fields
+    foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+
         $street_address = isset($_POST['item_street_address_' . $cart_item_key]) ? sanitize_text_field($_POST['item_street_address_' . $cart_item_key]) : '';
         if (empty($street_address) && !in_array('item_street_address', $added_notices)) {
             wc_add_notice(__('Please enter a <strong>Street Address</strong> for each cart item.', 'woocommerce'), 'error');
@@ -809,12 +934,6 @@ function validate_custom_fields()
             wc_add_notice(__('Please enter a <strong>Phone Number</strong> for each cart item.', 'woocommerce'), 'error');
             $added_notices[] = 'phone_number';
         }
-        $delivery_date = isset($_POST['item_delivery_date_' . $cart_item_key]) ? sanitize_text_field($_POST['item_delivery_date_' . $cart_item_key]) : '';
-        if (empty($delivery_date) && !in_array('item_delivery_date', $added_notices)) {
-            wc_add_notice(__('Please select a <strong>Delivery Date</strong> for each cart item.', 'woocommerce'), 'error');
-            $added_notices[] = 'item_delivery_date';
-        }
-
         $courier_instruct = isset($_POST['instruct_courier_to_' . $cart_item_key]) ? sanitize_text_field($_POST['instruct_courier_to_' . $cart_item_key]) : '';
         if (empty($courier_instruct) && !in_array('instruct_courier_to', $added_notices)) {
             wc_add_notice(__('Please select <strong>Courier Instructions</strong> for each cart item', 'woocommerce'), 'error');
@@ -827,3 +946,14 @@ function validate_custom_fields()
         }
     }
 }
+
+
+function disable_custom_fields_validation()
+{
+    remove_action('woocommerce_checkout_process', 'validate_custom_delivery_fields');
+}
+
+// register the ajax action for authenticated users
+add_action('wp_ajax_disable_custom_fields_validation', 'disable_custom_fields_validation');
+// register the ajax action for unauthenticated users
+add_action('wp_ajax_nopriv_disable_custom_fields_validation', 'disable_custom_fields_validation');
