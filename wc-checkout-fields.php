@@ -119,11 +119,12 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
             ));
             $field_name = $cart_item_key;
             $chosen_suburb = WC()->session->get('chosen_suburb');
+
             $chosen = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
             $field_id = 'suburb-' . $cart_item_key;
             $output .= woocommerce_form_field($field_name, array(
                 'type' => 'select',
-                'class' => array('save-select suburb-dropdown'),
+                'class' => array('suburb-dropdown'),
                 'options' => array(
                     '' => __("Choose a suburb option ..."),
                     'Aeroglen' => sprintf(__("Aeroglen (%s)", $domain), strip_tags(wc_price(17.50))),
@@ -303,7 +304,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
 
                 // Attach an event listener to the select element
                 $(this).on('change', function () {
-
                     // Store the selected value in local storage
                     var inputValue = $(this).val();
                     localStorage.setItem(inputName, inputValue);
@@ -316,7 +316,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     // Set the value of the select element to the saved value
                     $(this).val(savedValue);
                 }
-            });
+            });// Save the user's select values in local storage
 
             // Disable the first option of the delivery options, house type, and courier instructions selects
             $("#<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
@@ -389,7 +389,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                             }
                         },
                         onSelect: function (dateText, inst) {
-                            console.log('onSelect');
                             // Show the delivery options select when a date is selected
                             $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
 
@@ -419,6 +418,8 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
 
                     // Initialize the datepicker with the specified options
                     $($datePicker).datepicker(options);
+                    // Add the readonly attribute to the input field to prevent the keyboard from being triggered on a mobile device
+                    $datePicker.attr('readonly', 'readonly');
 
                     // Set the previously selected date as the default value for the datepicker
                     $datePicker.datepicker("setDate", selectedDate);
@@ -434,20 +435,13 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
             });
 
             function hideDeliveryType() {
-                console.log('hideDeliveryType');
                 var currentDate = localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') : '';
                 var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') : '';
                 var localStoreCurrentHours = localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') : '';
                 var localStoreCurrentMinutes = localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') : '';
 
-                console.log('currentDate : ' + currentDate);
-                console.log('selectedDate : ' + selectedDate);
-                console.log('localStoreCurrentHours : ' + localStoreCurrentHours);
-                console.log('localStoreCurrentMinutes : ' + localStoreCurrentMinutes);
-
                 if (selectedDate === currentDate &&
                     localStoreCurrentHours >= 9 && localStoreCurrentMinutes >= 0) {
-                    console.log('less than 9');
                     $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
                 } else {
                     $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
@@ -455,7 +449,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 // Check if selected date is today and it's after 12:00
                 if (selectedDate === currentDate &&
                     localStoreCurrentHours >= 12 && localStoreCurrentMinutes >= 0) {
-                    console.log('less than 12');
                     $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
                     $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
                 } else {
@@ -491,6 +484,7 @@ function checkout_suburb_script()
                 $('form.checkout').on('change', '.suburb-dropdown', function () {
                     var cart_item_key = $(this).find('select').attr('name');
                     var suburb = $(this).find('select').val();
+                    localStorage.setItem('localChosenSuburb_'+cart_item_key, suburb);
 
                     $.ajax({
                         type: 'POST',
@@ -502,10 +496,16 @@ function checkout_suburb_script()
                         },
                         success: function (result) {
                             $('body').trigger('update_checkout');
+
+
                         },
                         error: function (error) {
                             console.log(error); // just for testing | TO BE REMOVED
                         }
+                    }).done(function (data) {
+                        $(document).ajaxComplete(function () {
+                            $('.suburb-dropdown select#'+cart_item_key).val(localStorage.getItem('localChosenSuburb_'+cart_item_key));
+                        });
                     });
                 });
             });
