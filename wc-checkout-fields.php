@@ -123,7 +123,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
             $field_id = 'suburb-' . $cart_item_key;
             $output .= woocommerce_form_field($field_name, array(
                 'type' => 'select',
-                'class' => array('suburb-dropdown'),
+                'class' => array('save-select suburb-dropdown'),
                 'options' => array(
                     '' => __("Choose a suburb option ..."),
                     'Aeroglen' => sprintf(__("Aeroglen (%s)", $domain), strip_tags(wc_price(17.50))),
@@ -337,6 +337,9 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     now = new Date(data.datetime);
                     hours = now.getHours();
                     minutes = now.getMinutes();
+                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                    year = now.getFullYear(); // get the year
                 },
                 error: function () {
                     // If the AJAX request fails, log an error message and fall back to using the local machine time
@@ -344,6 +347,9 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     now = new Date();
                     hours = now.getHours();
                     minutes = now.getMinutes();
+                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                    year = now.getFullYear(); // get the year
                 },
                 complete: function () {
                     // Get the selected date from local storage
@@ -354,10 +360,12 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
 
                     // Define options for the jQuery UI datepicker
                     var allowedWeekends = ['2023-05-14'];
-                    var disabledDates = ["2023-02-22", "2023-03-01", "2023-03-03"];
+                    var disabledDates = ["2023-02-21"];
 
                     // Disable the first option of the delivery option select
                     $("#delivery_option_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                    // Get the previously selected date from local storage
+                    var previousSelectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
 
                     // Set the options for the jQuery UI datepicker
                     var options = {
@@ -381,32 +389,28 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                             }
                         },
                         onSelect: function (dateText, inst) {
+                            console.log('onSelect');
                             // Show the delivery options select when a date is selected
                             $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
 
                             // Store the selected date in local storage
                             var selectedDate = $(this).datepicker('getDate');
                             var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
-                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
 
+                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
+                            // Reset the value of the delivery option select to its default value if the selected date has changed
+                            if (previousSelectedDate !== selectedDateFormatted) {
+                                $("#delivery_option_<?php echo $cart_item_key ?>").val($("#delivery_option_<?php echo $cart_item_key ?> option:first-child").val());
+                                previousSelectedDate = selectedDateFormatted;
+                            }
                             // Check if selected date is today and it's after 09:00
                             var currentDate = now;
-                            if (selectedDate.getDate() === currentDate.getDate() &&
-                                currentDate.getHours() >= 9) {
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
-                            } else {
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
-                            }
-                            ;
-                            // Check if selected date is today and it's after 09:00
-                            if (selectedDate.getDate() === currentDate.getDate() &&
-                                currentDate.getHours() >= 12) {
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
-                            } else {
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
-                                $('#delivery-options_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
-                            }
+
+                            localStorage.setItem('currentDate_<?php echo $cart_item_key; ?>', day + '/' + month + '/' + year);
+                            localStorage.setItem('currentHours_<?php echo $cart_item_key; ?>', currentDate.getHours());
+                            localStorage.setItem('currentMinutes_<?php echo $cart_item_key; ?>', currentDate.getMinutes());
+
+                            hideDeliveryType();
                         }
                     };
 
@@ -426,7 +430,39 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                 }
             }).done(function (data) {
                 showHideFields();
+                hideDeliveryType();
             });
+
+            function hideDeliveryType() {
+                console.log('hideDeliveryType');
+                var currentDate = localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') : '';
+                var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') : '';
+                var localStoreCurrentHours = localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') : '';
+                var localStoreCurrentMinutes = localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') : '';
+
+                console.log('currentDate : ' + currentDate);
+                console.log('selectedDate : ' + selectedDate);
+                console.log('localStoreCurrentHours : ' + localStoreCurrentHours);
+                console.log('localStoreCurrentMinutes : ' + localStoreCurrentMinutes);
+
+                if (selectedDate === currentDate &&
+                    localStoreCurrentHours >= 9 && localStoreCurrentMinutes >= 0) {
+                    console.log('less than 9');
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
+                } else {
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
+                }
+                // Check if selected date is today and it's after 12:00
+                if (selectedDate === currentDate &&
+                    localStoreCurrentHours >= 12 && localStoreCurrentMinutes >= 0) {
+                    console.log('less than 12');
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
+                } else {
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
+                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
+                }
+            }
         });
 
     </script>
@@ -680,17 +716,17 @@ function checkout_delivery_script()
                             $address.css('display', 'grid');
                             $extra_info.css('display', 'grid');
 
-                            $street_address_field.val(localStorage.getItem('item_street_address_'+cart_item_key) ? localStorage.getItem('item_street_address_'+cart_item_key) : '');
-                            $post_code_field.val(localStorage.getItem('item_post_code_'+cart_item_key) ? localStorage.getItem('item_post_code_'+cart_item_key) : '');
-                            $phone_number_field.val(localStorage.getItem('phone_number_'+cart_item_key) ? localStorage.getItem('phone_number_'+cart_item_key) : '');
-                            $delivery_date_field.val(localStorage.getItem('selectedDate_'+cart_item_key) ? localStorage.getItem('selectedDate_'+cart_item_key) : '');
+                            $street_address_field.val(localStorage.getItem('item_street_address_' + cart_item_key) ? localStorage.getItem('item_street_address_' + cart_item_key) : '');
+                            $post_code_field.val(localStorage.getItem('item_post_code_' + cart_item_key) ? localStorage.getItem('item_post_code_' + cart_item_key) : '');
+                            $phone_number_field.val(localStorage.getItem('phone_number_' + cart_item_key) ? localStorage.getItem('phone_number_' + cart_item_key) : '');
+                            $delivery_date_field.val(localStorage.getItem('selectedDate_' + cart_item_key) ? localStorage.getItem('selectedDate_' + cart_item_key) : '');
 
-                            $("#instruct_courier_to_"+cart_item_key+" option:first-child").attr("selected", "selected");
-                            $("#house_type_"+cart_item_key+" option:first-child").attr("selected", "selected");
-                            $("#"+cart_item_key+" option:first-child").attr("selected", "selected");
+                            $("#instruct_courier_to_" + cart_item_key + " option:first-child").attr("selected", "selected");
+                            $("#house_type_" + cart_item_key + " option:first-child").attr("selected", "selected");
+                            $("#" + cart_item_key + " option:first-child").attr("selected", "selected");
 
 
-                        } else if (delivery_option_value === 'shop_pickup'){
+                        } else if (delivery_option_value === 'shop_pickup') {
 
                             $address.css('display', 'none');
                             $extra_info.css('display', 'none');
@@ -701,9 +737,9 @@ function checkout_delivery_script()
                             $phone_number_field.val(placeholderText);
                             $delivery_date_field.val(placeholderText);
 
-                            $("#instruct_courier_to_"+cart_item_key+" option:last-child").attr("selected", "selected");
-                            $("#house_type_"+cart_item_key+" option:last-child").attr("selected", "selected");
-                            $("#"+cart_item_key+" option:last-child").attr("selected", "selected");
+                            $("#instruct_courier_to_" + cart_item_key + " option:last-child").attr("selected", "selected");
+                            $("#house_type_" + cart_item_key + " option:last-child").attr("selected", "selected");
+                            $("#" + cart_item_key + " option:last-child").attr("selected", "selected");
 
                             // $.ajax({
                             //     type: 'POST',
