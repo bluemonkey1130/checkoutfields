@@ -5,6 +5,8 @@ Description: Custom Checkout Fields for WooCommerce is a plugin that allows you 
 Version: 1.0
 Author: George Hawthorne
 */
+
+
 /******
  *
  * CUSTOM FIELDS
@@ -13,457 +15,683 @@ Author: George Hawthorne
 add_filter('woocommerce_checkout_cart_item_quantity', 'add_suburb_checkout_field_to_product_list_item', 1, 3);
 function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart_item, $cart_item_key)
 {
-    ob_start();
-    // Get the suburb value, if it exists
-    $domain = 'woocommerce';
-    $product = $cart_item['data'];
-    $price = $product->get_price();
-    $output = '';
-    ?>
-    <div class="wrap-fields">
-        <div class="delivery">
-            <h4>Delivery Information</h4>
-            <div class="date-field_<?php echo $cart_item_key ?>">
-                <?php
-                // Output the delivery date field with required and save-data class
-                $output .= woocommerce_form_field('item_delivery_date_' . $cart_item_key, array(
-                    'type' => 'text',
-                    'label' => __('Delivery Date', $domain),
-                    'required' => true,
-                    'class' => array('save-data', 'datepicker', 'datepicker_' . $cart_item_key),
-                    'value' => isset($cart_item['item_delivery_date']) ? $cart_item['item_delivery_date'] : '',
-                    'autocomplete' => 'off',
-                    'custom_attributes' => array(
-                        'data-cart-item-id' => $cart_item_key,
-                    ),
-                ));
-                ?>
-            </div>
-            <div class="delivery-options-container_<?php echo $cart_item_key ?> " style="display: none;">
-                <?php
-                $delivery_field_name = 'delivery_option_' . $cart_item_key;
-                $delivery_field_id = 'delivery-option-' . $cart_item_key;
-                $chosen_delivery_type = WC()->session->get('chosen_delivery_option');
-                $chosen_delivery = isset($chosen_delivery_type[$cart_item_key]) ? $chosen_delivery_type[$cart_item_key] : '';
-                $output .= woocommerce_form_field($delivery_field_name, array(
-                    'type' => 'select',
-                    'class' => array('delivery-type'),
-                    'options' => array(
-                        '' => 'Select Delivery Type',
-                        'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
-                        'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
-                        'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
-                        'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
-                        'express_delivery' => sprintf(__("Express Delivery (%s)", $domain), strip_tags(wc_price(25.00))),
-                    ),
-                    'label' => __('Delivery Type', $domain),
-                    'required' => true,
-                ), $chosen_delivery);
-                ?>
-            </div>
-        </div>
-        <h4>Recipient Information</h4>
-        <div class="name">
-            <?php
-            $output .= woocommerce_form_field('item_first_name_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => __('First Name', $domain),
-                'class' => array('save-data'),
-                'placeholder' => 'Enter your First Name',
-                'required' => true,
-                'value' => isset($cart_item['item_first_name']) ? $cart_item['item_first_name'] : '',
-            ));
-            $output .= woocommerce_form_field('item_last_name_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => __('Last Name', $domain),
-                'class' => array('save-data'),
-                'placeholder' => 'Enter your Last Name',
-                'required' => true,
-                'value' => isset($cart_item['item_last_name']) ? $cart_item['item_last_name'] : '',
-            ));
-            ?>
-        </div>
-        <div class="address" id="address_<?php echo $cart_item_key ?>">
-            <?php
-            $output .= woocommerce_form_field('item_street_address_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => __('Street Address', $domain),
-                'class' => array('save-data'),
-                'placeholder' => 'House number and street name',
-                'required' => true,
-                'value' => isset($cart_item['item_street_address']) ? $cart_item['item_street_address'] : '',
-            ));
-            $output .= woocommerce_form_field('item_street_address_two_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => '',
-                'class' => array('save-data'),
-                'placeholder' => 'Apartment, suite, unit, etc. (optional)',
-                'value' => isset($cart_item['item_street_address_two']) ? $cart_item['item_street_address_two'] : '',
-            ));
-            $output .= woocommerce_form_field('item_post_code_' . $cart_item_key, array(
-                'type' => 'text',
-                'label' => __('Post Code', $domain),
-                'class' => array('save-data'),
-                'placeholder' => 'Enter your Post Code',
-                'required' => true,
-                'value' => isset($cart_item['item_post_code']) ? $cart_item['item_post_code'] : '',
-            ));
-            $output .= woocommerce_form_field('phone_number_' . $cart_item_key, array(
-                'type' => 'tel',
-                'label' => __('Recipient Phone Number', $domain),
-                'class' => array('save-data'),
-                'required' => true,
-                'placeholder' => 'Enter the recipient\'s phone number',
-                'validate' => array('phone'),
-                'value' => isset($cart_item['phone_number']) ? $cart_item['phone_number'] : '',
-            ));
-            $field_name = $cart_item_key;
-            $chosen_suburb = WC()->session->get('chosen_suburb');
 
-            $chosen = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
-            $field_id = 'suburb-' . $cart_item_key;
-            $output .= woocommerce_form_field($field_name, array(
-                'type' => 'select',
-                'class' => array('suburb-dropdown'),
-                'options' => array(
-                    '' => __("Choose a suburb option ..."),
-                    'Aeroglen' => sprintf(__("Aeroglen (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Aloomba' => sprintf(__("Aloomba (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Arriga' => sprintf(__("Arriga (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Atherton' => sprintf(__("Atherton (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Babinda' => sprintf(__("Babinda (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Bayview Heights' => sprintf(__("Bayview Heights (%s)", $domain), strip_tags(wc_price(25.00))),
-                    'Bellenden Ker' => sprintf(__("Bellenden Ker (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Bentley Park' => sprintf(__("Bentley Park (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Biboohra' => sprintf(__("Biboohra (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Bluewater' => sprintf(__("Bluewater(%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Bramston Beach' => sprintf(__("Bramston Beach (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Brinsmead' => sprintf(__("Brinsmead (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Buchans Point' => sprintf(__("Buchans Point (%s)", $domain), strip_tags(wc_price(37.50))),
-                    'Bungalow' => sprintf(__("Bungalow (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Cairns' => sprintf(__("Cairns (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Cairns CBD' => sprintf(__("Cairns CBD (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Cairns North' => sprintf(__("Cairns North (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Caravonica' => sprintf(__("Caravonica (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Cardwell' => sprintf(__("Cardwell (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Chewko' => sprintf(__("Chewko (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'City View' => sprintf(__("City View (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Clifton Beach' => sprintf(__("Clifton Beach (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Craiglie' => sprintf(__("Craiglie (%s)", $domain), strip_tags(wc_price(55.00))),
-                    'Danbulla' => sprintf(__("Danbulla (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Deeral' => sprintf(__("Deeral (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Dimbulah' => sprintf(__("Dimbulah (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Earlville' => sprintf(__("Earlville (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Edgehill' => sprintf(__("Edgehill (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Edmonton' => sprintf(__("Edmonton (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Ellis Beach' => sprintf(__("Ellis Beach (%s)", $domain), strip_tags(wc_price(37.50))),
-                    'Fishery Falls' => sprintf(__("Fishery Falls (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Forest Gardens' => sprintf(__("Forest Gardens (%s)", $domain), strip_tags(wc_price(25.00))),
-                    'Freshwater' => sprintf(__("Freshwater (%s)", $domain), strip_tags(wc_price(20.00))),
-                    'Goldsbrough' => sprintf(__("Goldsbrough (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Gordonvale' => sprintf(__("Gordonvale (%s)", $domain), strip_tags(wc_price(38.50))),
-                    'Herberton' => sprintf(__("Herberton (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Holloways Beach' => sprintf(__("Holloways Beach (%s)", $domain), strip_tags(wc_price(20.00))),
-                    'Innisfail' => sprintf(__("Innisfail (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Kairi' => sprintf(__("Kairi (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Kamerunga' => sprintf(__("Kamerunga (%s)", $domain), strip_tags(wc_price(22.00))),
-                    'Kanimbla' => sprintf(__("Kanimbla (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Kewarra Beach' => sprintf(__("Kewarra Beach (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Koah' => sprintf(__("Koah (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Kuranda' => sprintf(__("Kuranda (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Lake Barrine' => sprintf(__("Lake Barrine (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Lake Eachan' => sprintf(__("Lake Eachan (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Lake Placid' => sprintf(__("Lake Placid (%s)", $domain), strip_tags(wc_price(22.00))),
-                    'Lower Tully' => sprintf(__("Lower Tully (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Machans Beach' => sprintf(__("Machans Beach (%s)", $domain), strip_tags(wc_price(20.00))),
-                    'Mareeba' => sprintf(__("Mareeba (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Malanda' => sprintf(__("Malanda (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Manoora' => sprintf(__("Manoora (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Manunda' => sprintf(__("Manunda (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Millstream' => sprintf(__("Millstream (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Millaa Millaa' => sprintf(__("Millaa Millaa (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Mirriwinni' => sprintf(__("Mirriwinni (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Mission Beach' => sprintf(__("Mission Beach (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Mooroobool' => sprintf(__("Mooroobool (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Mount Malloy' => sprintf(__("Mount Malloy (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Mount Peter' => sprintf(__("Mount Peter (%s)", $domain), strip_tags(wc_price(37.50))),
-                    'Mount Sheridan' => sprintf(__("Mount Sheridan (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Mowbray' => sprintf(__("Mowbray (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Mutchilba' => sprintf(__("Mutchilba (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Oak Beach' => sprintf(__("Oak Beach (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Paddys Green' => sprintf(__("Paddys Green (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Palm Cove' => sprintf(__("Palm Cove (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Paradise Palms' => sprintf(__("Paradise Palms (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Port Douglas' => sprintf(__("Port Douglas (%s)", $domain), strip_tags(wc_price(55.00))),
-                    'Portsmith' => sprintf(__("Portsmith (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Ravenshoe' => sprintf(__("Ravenshoe (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Redlynch' => sprintf(__("Redlynch (%s)", $domain), strip_tags(wc_price(20.00))),
-                    'Redlynch Valley' => sprintf(__("Redlynch Valley (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Smithfield' => sprintf(__("Smithfield (%s)", $domain), strip_tags(wc_price(25.00))),
-                    'Smithfield Heights' => sprintf(__("Smithfield Heights (%s)", $domain), strip_tags(wc_price(25.00))),
-                    'Southedge' => sprintf(__("Southedge (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Speewah' => sprintf(__("Speewah (%s)", $domain), strip_tags(wc_price(37.50))),
-                    'Stratford' => sprintf(__("Stratford (%s)", $domain), strip_tags(wc_price(20.00))),
-                    'Tolga' => sprintf(__("Tolga (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Tinaroo' => sprintf(__("Tinaroo (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Trazali' => sprintf(__("Trazali (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Trinty Beach' => sprintf(__("Trinty Beach (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Tully' => sprintf(__("Tully (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Tully Heads' => sprintf(__("Tully Heads (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Walkamin' => sprintf(__("Walkamin (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Wangetti' => sprintf(__("Wangetti (%s)", $domain), strip_tags(wc_price(37.50))),
-                    'Westcourt' => sprintf(__("Westcourt (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Whitfield' => sprintf(__("Whitfield (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Woree' => sprintf(__("Woree (%s)", $domain), strip_tags(wc_price(17.50))),
-                    'Yarrabah' => sprintf(__("Yarrabah (%s)", $domain), strip_tags(wc_price(45.00))),
-                    'Yorkeys Knob' => sprintf(__("Yorkeys Knob (%s)", $domain), strip_tags(wc_price(27.50))),
-                    'Yungaburra' => sprintf(__("Yungaburra (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Not Applicable' => 'Not Applicable',
-                ),
-                'label' => 'Select the suburb:',
-                'required' => true
-            ), $chosen);
-            ?>
-        </div>
-        <div class="extra-info" id="extra-info_<?php echo $cart_item_key ?>">
-            <h4>Property Information</h4>
-            <?php
+    // Get the terms of the "Product Type" attribute
+    $id = $cart_item['product_id'];
+// Replace 'pa_product_type' with the attribute slug you want to retrieve terms for
+    $attribute_slug = 'pa_delivery-type';
 
-            $output .= woocommerce_form_field('instruct_courier_to_' . $cart_item_key, array(
-                'type' => 'select',
-                'label' => __('If the recipient is not there?', $domain),
-                'class' => array('save-data'),
-                'required' => true,
-                'options' => array(
-                    '' => __('Please select', $domain),
-                    'leave-at-the-front-door' => __('Leave at the front door'),
-                    'leave-at-reception' => __('Leave at reception'),
-                    'return-to-florist-shop-fees-may-apply' => __('Return to florist shop (fees may apply)', $domain),
-                    'Not Applicable' => 'Not Applicable',
-                ),
-            ));
-            $output .= woocommerce_form_field('house_type_' . $cart_item_key, array(
-                'type' => 'select',
-                'label' => __('Is the House/Unit/Apartment gated?', $domain),
-                'class' => array('save-data'),
-                'required' => true,
-                'options' => array(
-                    '' => __('Please select', $domain),
-                    'yes' => __('Yes'),
-                    'no' => __('No'),
-                    'Not Applicable' => 'Not Applicable',
-                ),
-            ));
-            ?>
-        </div>
-        <div class="notes">
-            <?php
-            $output .= woocommerce_form_field('order_notes_' . $cart_item_key, array(
-                'type' => 'textarea',
-                'label' => __('Order notes', $domain),
-                'class' => array('save-data'),
-                'placeholder' => 'Notes about your order, e.g. special notes for delivery.',
-                'value' => isset($cart_item['order_notes']) ? $cart_item['order_notes'] : '',
-            ));
-            ?>
-        </div>
-    </div>
-    <script>
-        // Pre-populate input fields with the saved value from local storage
-        jQuery(document).ready(function () {
-            // Save the user's input values in local storage
-            $('.save-data input').each(function () {
+// Get the terms of the specified attribute for the product
+    $terms = wc_get_product_terms($id, $attribute_slug);
 
-                // Get the name of the input field
-                var inputName = $(this).attr('name');
 
-                // Attach an event listener to the input field
-                $(this).on('input', function () {
+// Check if terms are available and not an error
+    if (!empty($terms) && !is_wp_error($terms)) {
+        // Loop through the terms if there are multiple terms associated with the attribute
+        foreach ($terms as $term) {
+            // Access term name, slug, or other properties as needed
+            $term_name = $term->name;
+            $term_slug = $term->slug;
 
-                    // Get the value of the input field
-                    var inputValue = $(this).val();
+            // Use the term name or slug for further processing
+            switch ($term_slug) {
+                case 'courier':
+                case '':
+                    ob_start();
+                    // Get the suburb value, if it exists
+                    $domain = 'woocommerce';
+                    $product = $cart_item['data'];
+                    $price = $product->get_price();
+                    $output = '';
+                    ?>
+                    <div class="wrap-fields">
+                        <div class="delivery">
+                            <h4>Delivery Information</h4>
+                            <div class="date-field_<?php echo $cart_item_key ?>">
+                                <?php
+                                // Output the delivery date field with required and save-data class
+                                $output .= woocommerce_form_field('item_delivery_date_' . $cart_item_key, array(
+                                    'type' => 'text',
+                                    'label' => __('Delivery Date', $domain),
+                                    'required' => true,
+                                    'class' => array('save-data', 'datepicker', 'datepicker_' . $cart_item_key),
+                                    'value' => isset($cart_item['item_delivery_date']) ? $cart_item['item_delivery_date'] : '',
+                                    'autocomplete' => 'off',
+                                    'custom_attributes' => array(
+                                        'data-cart-item-id' => $cart_item_key,
+                                    ),
+                                ));
+                                ?>
+                            </div>
+                            <div class="delivery-options-container_<?php echo $cart_item_key ?> " style="display: none;">
+                                <?php
+                                $delivery_field_name = 'delivery_option_' . $cart_item_key;
+                                $delivery_field_id = 'delivery-option-' . $cart_item_key;
+                                $chosen_delivery_type = WC()->session->get('chosen_delivery_option');
+                                $chosen_delivery = isset($chosen_delivery_type[$cart_item_key]) ? $chosen_delivery_type[$cart_item_key] : '';
+                                $output .= woocommerce_form_field($delivery_field_name, array(
+                                    'type' => 'select',
+                                    'class' => array('delivery-type'),
+                                    'options' => array(
+                                        '' => 'Select Delivery Type',
+                                        'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
+                                        'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
+                                        'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
+                                        'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
+                                        'express_delivery' => sprintf(__("Express Delivery (%s)", $domain), strip_tags(wc_price(25.00))),
+                                    ),
+                                    'label' => __('Delivery Type', $domain),
+                                    'required' => true,
+                                ), $chosen_delivery);
+                                ?>
+                            </div>
+                        </div>
+                        <h4>Recipient Information</h4>
+                        <div class="name">
+                            <?php
+                            $output .= woocommerce_form_field('item_first_name_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => __('First Name', $domain),
+                                'class' => array('save-data'),
+                                'placeholder' => 'Enter your First Name',
+                                'required' => true,
+                                'value' => isset($cart_item['item_first_name']) ? $cart_item['item_first_name'] : '',
+                            ));
+                            $output .= woocommerce_form_field('item_last_name_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => __('Last Name', $domain),
+                                'class' => array('save-data'),
+                                'placeholder' => 'Enter your Last Name',
+                                'required' => true,
+                                'value' => isset($cart_item['item_last_name']) ? $cart_item['item_last_name'] : '',
+                            ));
+                            ?>
+                        </div>
+                        <div class="address" id="address_<?php echo $cart_item_key ?>">
+                            <?php
+                            $output .= woocommerce_form_field('item_street_address_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => __('Street Address', $domain),
+                                'class' => array('save-data'),
+                                'placeholder' => 'House number and street name',
+                                'required' => true,
+                                'value' => isset($cart_item['item_street_address']) ? $cart_item['item_street_address'] : '',
+                            ));
+                            $output .= woocommerce_form_field('item_street_address_two_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => '',
+                                'class' => array('save-data'),
+                                'placeholder' => 'Apartment, suite, unit, etc. (optional)',
+                                'value' => isset($cart_item['item_street_address_two']) ? $cart_item['item_street_address_two'] : '',
+                            ));
+                            $output .= woocommerce_form_field('item_post_code_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => __('Post Code', $domain),
+                                'class' => array('save-data'),
+                                'placeholder' => 'Enter your Post Code',
+                                'required' => true,
+                                'value' => isset($cart_item['item_post_code']) ? $cart_item['item_post_code'] : '',
+                            ));
+                            $output .= woocommerce_form_field('phone_number_' . $cart_item_key, array(
+                                'type' => 'tel',
+                                'label' => __('Recipient Phone Number', $domain),
+                                'class' => array('save-data'),
+                                'required' => true,
+                                'placeholder' => 'Enter the recipient\'s phone number',
+                                'validate' => array('phone'),
+                                'value' => isset($cart_item['phone_number']) ? $cart_item['phone_number'] : '',
+                            ));
+                            $field_name = $cart_item_key;
+                            $chosen_suburb = WC()->session->get('chosen_suburb');
 
-                    // Store the value in localStorage using the input field name as the key
-                    localStorage.setItem(inputName, inputValue);
-                });
+                            $chosen = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
+                            $field_id = 'suburb-' . $cart_item_key;
+                            $output .= woocommerce_form_field($field_name, array(
+                                'type' => 'select',
+                                'class' => array('suburb-dropdown'),
+                                'options' => array(
+                                    '' => __("Choose a suburb option ..."),
+                                    'Aeroglen' => sprintf(__("Aeroglen (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Aloomba' => sprintf(__("Aloomba (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Arriga' => sprintf(__("Arriga (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Atherton' => sprintf(__("Atherton (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Babinda' => sprintf(__("Babinda (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Bayview Heights' => sprintf(__("Bayview Heights (%s)", $domain), strip_tags(wc_price(25.00))),
+                                    'Bellenden Ker' => sprintf(__("Bellenden Ker (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Bentley Park' => sprintf(__("Bentley Park (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Biboohra' => sprintf(__("Biboohra (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Bluewater' => sprintf(__("Bluewater(%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Bramston Beach' => sprintf(__("Bramston Beach (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Brinsmead' => sprintf(__("Brinsmead (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Buchans Point' => sprintf(__("Buchans Point (%s)", $domain), strip_tags(wc_price(37.50))),
+                                    'Bungalow' => sprintf(__("Bungalow (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Cairns' => sprintf(__("Cairns (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Cairns CBD' => sprintf(__("Cairns CBD (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Cairns North' => sprintf(__("Cairns North (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Caravonica' => sprintf(__("Caravonica (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Cardwell' => sprintf(__("Cardwell (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Chewko' => sprintf(__("Chewko (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'City View' => sprintf(__("City View (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Clifton Beach' => sprintf(__("Clifton Beach (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Craiglie' => sprintf(__("Craiglie (%s)", $domain), strip_tags(wc_price(55.00))),
+                                    'Danbulla' => sprintf(__("Danbulla (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Deeral' => sprintf(__("Deeral (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Dimbulah' => sprintf(__("Dimbulah (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Earlville' => sprintf(__("Earlville (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Edgehill' => sprintf(__("Edgehill (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Edmonton' => sprintf(__("Edmonton (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Ellis Beach' => sprintf(__("Ellis Beach (%s)", $domain), strip_tags(wc_price(37.50))),
+                                    'Fishery Falls' => sprintf(__("Fishery Falls (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Forest Gardens' => sprintf(__("Forest Gardens (%s)", $domain), strip_tags(wc_price(25.00))),
+                                    'Freshwater' => sprintf(__("Freshwater (%s)", $domain), strip_tags(wc_price(20.00))),
+                                    'Goldsbrough' => sprintf(__("Goldsbrough (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Gordonvale' => sprintf(__("Gordonvale (%s)", $domain), strip_tags(wc_price(38.50))),
+                                    'Herberton' => sprintf(__("Herberton (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Holloways Beach' => sprintf(__("Holloways Beach (%s)", $domain), strip_tags(wc_price(20.00))),
+                                    'Innisfail' => sprintf(__("Innisfail (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Kairi' => sprintf(__("Kairi (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Kamerunga' => sprintf(__("Kamerunga (%s)", $domain), strip_tags(wc_price(22.00))),
+                                    'Kanimbla' => sprintf(__("Kanimbla (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Kewarra Beach' => sprintf(__("Kewarra Beach (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Koah' => sprintf(__("Koah (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Kuranda' => sprintf(__("Kuranda (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Lake Barrine' => sprintf(__("Lake Barrine (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Lake Eachan' => sprintf(__("Lake Eachan (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Lake Placid' => sprintf(__("Lake Placid (%s)", $domain), strip_tags(wc_price(22.00))),
+                                    'Lower Tully' => sprintf(__("Lower Tully (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Machans Beach' => sprintf(__("Machans Beach (%s)", $domain), strip_tags(wc_price(20.00))),
+                                    'Mareeba' => sprintf(__("Mareeba (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Malanda' => sprintf(__("Malanda (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Manoora' => sprintf(__("Manoora (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Manunda' => sprintf(__("Manunda (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Millstream' => sprintf(__("Millstream (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Millaa Millaa' => sprintf(__("Millaa Millaa (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Mirriwinni' => sprintf(__("Mirriwinni (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Mission Beach' => sprintf(__("Mission Beach (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Mooroobool' => sprintf(__("Mooroobool (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Mount Malloy' => sprintf(__("Mount Malloy (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Mount Peter' => sprintf(__("Mount Peter (%s)", $domain), strip_tags(wc_price(37.50))),
+                                    'Mount Sheridan' => sprintf(__("Mount Sheridan (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Mowbray' => sprintf(__("Mowbray (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Mutchilba' => sprintf(__("Mutchilba (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Oak Beach' => sprintf(__("Oak Beach (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Paddys Green' => sprintf(__("Paddys Green (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Palm Cove' => sprintf(__("Palm Cove (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Paradise Palms' => sprintf(__("Paradise Palms (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Port Douglas' => sprintf(__("Port Douglas (%s)", $domain), strip_tags(wc_price(55.00))),
+                                    'Portsmith' => sprintf(__("Portsmith (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Ravenshoe' => sprintf(__("Ravenshoe (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Redlynch' => sprintf(__("Redlynch (%s)", $domain), strip_tags(wc_price(20.00))),
+                                    'Redlynch Valley' => sprintf(__("Redlynch Valley (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Smithfield' => sprintf(__("Smithfield (%s)", $domain), strip_tags(wc_price(25.00))),
+                                    'Smithfield Heights' => sprintf(__("Smithfield Heights (%s)", $domain), strip_tags(wc_price(25.00))),
+                                    'Southedge' => sprintf(__("Southedge (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Speewah' => sprintf(__("Speewah (%s)", $domain), strip_tags(wc_price(37.50))),
+                                    'Stratford' => sprintf(__("Stratford (%s)", $domain), strip_tags(wc_price(20.00))),
+                                    'Tolga' => sprintf(__("Tolga (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Tinaroo' => sprintf(__("Tinaroo (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Trazali' => sprintf(__("Trazali (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Trinty Beach' => sprintf(__("Trinty Beach (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Tully' => sprintf(__("Tully (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Tully Heads' => sprintf(__("Tully Heads (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Walkamin' => sprintf(__("Walkamin (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Wangetti' => sprintf(__("Wangetti (%s)", $domain), strip_tags(wc_price(37.50))),
+                                    'Westcourt' => sprintf(__("Westcourt (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Whitfield' => sprintf(__("Whitfield (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Woree' => sprintf(__("Woree (%s)", $domain), strip_tags(wc_price(17.50))),
+                                    'Yarrabah' => sprintf(__("Yarrabah (%s)", $domain), strip_tags(wc_price(45.00))),
+                                    'Yorkeys Knob' => sprintf(__("Yorkeys Knob (%s)", $domain), strip_tags(wc_price(27.50))),
+                                    'Yungaburra' => sprintf(__("Yungaburra (%s)", $domain), strip_tags(wc_price(40.00))),
+                                    'Not Applicable' => 'Not Applicable',
+                                ),
+                                'label' => 'Select the suburb:',
+                                'required' => true
+                            ), $chosen);
+                            ?>
+                        </div>
+                        <div class="extra-info" id="extra-info_<?php echo $cart_item_key ?>">
+                            <h4>Property Information</h4>
+                            <?php
 
-                // Get the saved value from localStorage
-                var savedValue = localStorage.getItem(inputName);
+                            $output .= woocommerce_form_field('instruct_courier_to_' . $cart_item_key, array(
+                                'type' => 'select',
+                                'label' => __('If the recipient is not there?', $domain),
+                                'class' => array('save-data'),
+                                'required' => true,
+                                'options' => array(
+                                    '' => __('Please select', $domain),
+                                    'leave-at-the-front-door' => __('Leave at the front door'),
+                                    'leave-at-reception' => __('Leave at reception'),
+                                    'return-to-florist-shop-fees-may-apply' => __('Return to florist shop (fees may apply)', $domain),
+                                    'Not Applicable' => 'Not Applicable',
+                                ),
+                            ));
+                            $output .= woocommerce_form_field('house_type_' . $cart_item_key, array(
+                                'type' => 'select',
+                                'label' => __('Is the House/Unit/Apartment gated?', $domain),
+                                'class' => array('save-data'),
+                                'required' => true,
+                                'options' => array(
+                                    '' => __('Please select', $domain),
+                                    'yes' => __('Yes'),
+                                    'no' => __('No'),
+                                    'Not Applicable' => 'Not Applicable',
+                                ),
+                            ));
+                            ?>
+                        </div>
+                        <div class="notes">
+                            <?php
+                            $output .= woocommerce_form_field('order_notes_' . $cart_item_key, array(
+                                'type' => 'textarea',
+                                'label' => __('Order notes', $domain),
+                                'class' => array('save-data'),
+                                'placeholder' => 'Notes about your order, e.g. special notes for delivery.',
+                                'value' => isset($cart_item['order_notes']) ? $cart_item['order_notes'] : '',
+                            ));
+                            ?>
+                        </div>
+                    </div>
+                    <script>
+                        // Pre-populate input fields with the saved value from local storage
+                        jQuery(document).ready(function () {
+                            // Save the user's input values in local storage
+                            $('.save-data input').each(function () {
 
-                // If a saved value exists, set it as the value of the input field
-                if (savedValue !== null && savedValue !== '') {
-                    $(this).val(savedValue);
-                }
-            });
+                                // Get the name of the input field
+                                var inputName = $(this).attr('name');
 
-            // Save the user's select values in local storage
-            $('.save-data select').each(function () {
+                                // Attach an event listener to the input field
+                                $(this).on('input', function () {
 
-                // Get the name of the select element
-                var inputName = $(this).attr('name');
+                                    // Get the value of the input field
+                                    var inputValue = $(this).val();
 
-                // Attach an event listener to the select element
-                $(this).on('change', function () {
-                    // Store the selected value in local storage
-                    var inputValue = $(this).val();
-                    localStorage.setItem(inputName, inputValue);
-                });
+                                    // Store the value in localStorage using the input field name as the key
+                                    localStorage.setItem(inputName, inputValue);
+                                });
 
-                // Check if a value has been saved in local storage for this select element
-                var savedValue = localStorage.getItem(inputName);
-                if (savedValue !== null && savedValue !== '') {
+                                // Get the saved value from localStorage
+                                var savedValue = localStorage.getItem(inputName);
 
-                    // Set the value of the select element to the saved value
-                    $(this).val(savedValue);
-                }
-            });// Save the user's select values in local storage
-
-            // Disable the first option of the delivery options, house type, and courier instructions selects
-            $("#<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-            $("#house_type_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-            $("#house_type_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
-
-            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
-
-            $("#suburb_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
-
-            // Make an AJAX request to get the current time from a remote API
-            $.ajax({
-                url: 'https://worldtimeapi.org/api/timezone/Australia/Brisbane',
-                dataType: 'json',
-                success: function (data) {
-                    // Parse the time data from the API response
-                    now = new Date(data.datetime);
-                    hours = now.getHours();
-                    minutes = now.getMinutes();
-                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
-                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
-                    year = now.getFullYear(); // get the year
-                },
-                error: function () {
-                    // If the AJAX request fails, log an error message and fall back to using the local machine time
-                    console.log('Error getting current time from World Time API. Falling back to local machine time.');
-                    now = new Date();
-                    hours = now.getHours();
-                    minutes = now.getMinutes();
-                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
-                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
-                    year = now.getFullYear(); // get the year
-                },
-                complete: function () {
-                    // Get the selected date from local storage
-                    var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
-
-                    // Set the minDate option of the datepicker based on the current time
-                    var minDate = hours < 13 ? 0 : 1;
-
-                    // Define options for the jQuery UI datepicker
-                    var allowedWeekends = ['2023-05-14'];
-                    var disabledDates = ["2023-02-21"];
-
-                    // Disable the first option of the delivery option select
-                    $("#delivery_option_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
-                    // Get the previously selected date from local storage
-                    var previousSelectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
-
-                    // Set the options for the jQuery UI datepicker
-                    var options = {
-                        minDate: minDate,
-                        firstDay: 1, // Start the week on Monday
-                        dateFormat: 'dd/mm/yy', // Australian date format
-                        beforeShowDay: function (date) {
-                            // Disable weekends, except for specific dates
-                            var day = date.getDay();
-                            var dateString = $.datepicker.formatDate('yy-mm-dd', date);
-                            if (day === 0 || day === 6) {
-                                if (allowedWeekends.includes(dateString)) {
-                                    return [true];
-                                } else {
-                                    return [false];
+                                // If a saved value exists, set it as the value of the input field
+                                if (savedValue !== null && savedValue !== '') {
+                                    $(this).val(savedValue);
                                 }
-                            } else if (disabledDates.includes(dateString)) {
-                                return [false];
-                            } else {
-                                return [true];
+                            });
+
+                            // Save the user's select values in local storage
+                            $('.save-data select').each(function () {
+
+                                // Get the name of the select element
+                                var inputName = $(this).attr('name');
+
+                                // Attach an event listener to the select element
+                                $(this).on('change', function () {
+                                    // Store the selected value in local storage
+                                    var inputValue = $(this).val();
+                                    localStorage.setItem(inputName, inputValue);
+                                });
+
+                                // Check if a value has been saved in local storage for this select element
+                                var savedValue = localStorage.getItem(inputName);
+                                if (savedValue !== null && savedValue !== '') {
+
+                                    // Set the value of the select element to the saved value
+                                    $(this).val(savedValue);
+                                }
+                            });// Save the user's select values in local storage
+
+                            // Disable the first option of the delivery options, house type, and courier instructions selects
+                            $("#<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                            $("#house_type_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                            $("#house_type_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
+
+                            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                            $("#instruct_courier_to_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
+
+                            $("#suburb_<?php echo $cart_item_key ?> option:last-child").css('display', 'none');
+
+                            // Make an AJAX request to get the current time from a remote API
+                            $.ajax({
+                                url: 'https://worldtimeapi.org/api/timezone/Australia/Brisbane',
+                                dataType: 'json',
+                                success: function (data) {
+                                    // Parse the time data from the API response
+                                    now = new Date(data.datetime);
+                                    hours = now.getHours();
+                                    minutes = now.getMinutes();
+                                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                                    year = now.getFullYear(); // get the year
+                                },
+                                error: function () {
+                                    // If the AJAX request fails, log an error message and fall back to using the local machine time
+                                    console.log('Error getting current time from World Time API. Falling back to local machine time.');
+                                    now = new Date();
+                                    hours = now.getHours();
+                                    minutes = now.getMinutes();
+                                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                                    year = now.getFullYear(); // get the year
+                                },
+                                complete: function () {
+                                    // Get the selected date from local storage
+                                    var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
+
+                                    // Set the minDate option of the datepicker based on the current time
+                                    var minDate = hours < 13 ? 0 : 1;
+
+                                    // Define options for the jQuery UI datepicker
+                                    var allowedWeekends = ['2023-05-14'];
+                                    var disabledDates = ["2023-02-21"];
+
+                                    // Disable the first option of the delivery option select
+                                    $("#delivery_option_<?php echo $cart_item_key ?> option:first-child").attr("disabled", "disabled");
+                                    // Get the previously selected date from local storage
+                                    var previousSelectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
+
+                                    // Set the options for the jQuery UI datepicker
+                                    var options = {
+                                        minDate: minDate,
+                                        firstDay: 1, // Start the week on Monday
+                                        dateFormat: 'dd/mm/yy', // Australian date format
+                                        beforeShowDay: function (date) {
+                                            // Disable weekends, except for specific dates
+                                            var day = date.getDay();
+                                            var dateString = $.datepicker.formatDate('yy-mm-dd', date);
+                                            if (day === 0 || day === 6) {
+                                                if (allowedWeekends.includes(dateString)) {
+                                                    return [true];
+                                                } else {
+                                                    return [false];
+                                                }
+                                            } else if (disabledDates.includes(dateString)) {
+                                                return [false];
+                                            } else {
+                                                return [true];
+                                            }
+                                        },
+                                        onSelect: function (dateText, inst) {
+                                            // Show the delivery options select when a date is selected
+                                            $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
+
+                                            // Store the selected date in local storage
+                                            var selectedDate = $(this).datepicker('getDate');
+                                            var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
+
+                                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
+                                            // Reset the value of the delivery option select to its default value if the selected date has changed
+                                            if (previousSelectedDate !== selectedDateFormatted) {
+                                                $("#delivery_option_<?php echo $cart_item_key ?>").val($("#delivery_option_<?php echo $cart_item_key ?> option:first-child").val());
+                                                previousSelectedDate = selectedDateFormatted;
+                                            }
+                                            // Check if selected date is today and it's after 09:00
+                                            var currentDate = now;
+
+                                            localStorage.setItem('currentDate_<?php echo $cart_item_key; ?>', day + '/' + month + '/' + year);
+                                            localStorage.setItem('currentHours_<?php echo $cart_item_key; ?>', currentDate.getHours());
+                                            localStorage.setItem('currentMinutes_<?php echo $cart_item_key; ?>', currentDate.getMinutes());
+
+                                            hideDeliveryType();
+                                        }
+                                    };
+
+                                    // Select the input field for the datepicker
+                                    var $datePicker = $(".datepicker_<?php echo $cart_item_key; ?> input");
+
+                                    // Initialize the datepicker with the specified options
+                                    $($datePicker).datepicker(options);
+                                    // Add the readonly attribute to the input field to prevent the keyboard from being triggered on a mobile device
+                                    $datePicker.attr('readonly', 'readonly');
+
+                                    // Set the previously selected date as the default value for the datepicker
+                                    $datePicker.datepicker("setDate", selectedDate);
+
+                                    // Show the delivery options select if a date has been selected previously
+                                    if (selectedDate) {
+                                        $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
+                                    }
+                                }
+                            }).done(function (data) {
+                                showHideFields();
+                                hideDeliveryType();
+                            });
+
+                            function hideDeliveryType() {
+                                var currentDate = localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') : '';
+                                var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') : '';
+                                var localStoreCurrentHours = localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') : '';
+                                var localStoreCurrentMinutes = localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') : '';
+
+                                if (selectedDate === currentDate &&
+                                    localStoreCurrentHours >= 9 && localStoreCurrentMinutes >= 0) {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
+                                } else {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
+                                }
+                                // Check if selected date is today and it's after 12:00
+                                if (selectedDate === currentDate &&
+                                    localStoreCurrentHours >= 12 && localStoreCurrentMinutes >= 0) {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
+                                } else {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
+                                }
                             }
-                        },
-                        onSelect: function (dateText, inst) {
-                            // Show the delivery options select when a date is selected
-                            $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
+                        });
 
-                            // Store the selected date in local storage
-                            var selectedDate = $(this).datepicker('getDate');
-                            var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
+                    </script>
+                    <?php
+                    $output .= '<div class="product-price" data-original-price="' . $price . '"></div>';
+                    $output = ob_get_clean();
+                    // Return the product quantity with the suburb field
+                    return $product_quantity . $output;
 
-                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
-                            // Reset the value of the delivery option select to its default value if the selected date has changed
-                            if (previousSelectedDate !== selectedDateFormatted) {
-                                $("#delivery_option_<?php echo $cart_item_key ?>").val($("#delivery_option_<?php echo $cart_item_key ?> option:first-child").val());
-                                previousSelectedDate = selectedDateFormatted;
+                    break;
+
+                case 'bulk-order':
+                    $domain = 'woocommerce';
+                    $output = '';
+                    ?>
+                    <div class="wrap-fields">
+                        <div class="delivery">
+                            <h4>Delivery Information</h4>
+                            <div class="date-field_<?php echo $cart_item_key ?>">
+                            <?php
+                            // Output the delivery date field with required and save-data class
+                            $output .= woocommerce_form_field('bulk_item_delivery_date_' . $cart_item_key, array(
+                                'type' => 'text',
+                                'label' => __('Delivery Date', $domain),
+                                'required' => true,
+                                'class' => array('bulk-item-save-data', 'datepicker', 'bulk_datepicker_' . $cart_item_key),
+                                'value' => isset($cart_item['bulk_item_delivery_date']) ? $cart_item['bulk_item_delivery_date'] : '',
+                                'autocomplete' => 'off',
+                                'custom_attributes' => array(
+                                    'data-cart-item-id' => $cart_item_key,
+                                ),
+                            ));
+                            ?>
+                            </div>
+                        </div>
+                    </div>
+                    <script>
+                        // Pre-populate input fields with the saved value from local storage
+                        jQuery(document).ready(function () {
+                            // Save the user's select values in local storage
+                            $('.bulk-item-save-data select').each(function () {
+
+                                // Get the name of the select element
+                                var inputName = $(this).attr('name');
+
+                                // Attach an event listener to the select element
+                                $(this).on('change', function () {
+                                    // Store the selected value in local storage
+                                    var inputValue = $(this).val();
+                                    localStorage.setItem(inputName, inputValue);
+                                });
+
+                                // Check if a value has been saved in local storage for this select element
+                                var savedValue = localStorage.getItem(inputName);
+                                if (savedValue !== null && savedValue !== '') {
+
+                                    // Set the value of the select element to the saved value
+                                    $(this).val(savedValue);
+                                }
+                            });// Save the user's select values in local storage
+
+                            // Make an AJAX request to get the current time from a remote API
+                            $.ajax({
+                                url: 'https://worldtimeapi.org/api/timezone/Australia/Brisbane',
+                                dataType: 'json',
+                                success: function (data) {
+                                    // Parse the time data from the API response
+                                    now = new Date(data.datetime);
+                                    hours = now.getHours();
+                                    minutes = now.getMinutes();
+                                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                                    year = now.getFullYear(); // get the year
+                                },
+                                error: function () {
+                                    // If the AJAX request fails, log an error message and fall back to using the local machine time
+                                    console.log('Error getting current time from World Time API. Falling back to local machine time.');
+                                    now = new Date();
+                                    hours = now.getHours();
+                                    minutes = now.getMinutes();
+                                    day = now.getDate().toString().padStart(2, '0'); // get the day of the month and add a leading zero if necessary
+                                    month = (now.getMonth() + 1).toString().padStart(2, '0'); // get the month (January is 0, so add 1 to get the actual month) and add a leading zero if necessary
+                                    year = now.getFullYear(); // get the year
+                                },
+                                complete: function () {
+                                    // Get the selected date from local storage
+                                    var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
+
+                                    // Set the minDate option of the datepicker based on the current time
+                                    var minDate = hours < 13 ? 0 : 1;
+                                    minDate += 30;
+                                    // Define options for the jQuery UI datepicker
+                                    var allowedWeekends = ['2023-05-14'];
+                                    var disabledDates = ["2023-02-21"];
+
+                                    // Disable the first option of the delivery option select
+                                    // Get the previously selected date from local storage
+                                    var previousSelectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>');
+
+                                    // Set the options for the jQuery UI datepicker
+                                    var options = {
+                                        minDate: minDate,
+                                        firstDay: 1, // Start the week on Monday
+                                        dateFormat: 'dd/mm/yy', // Australian date format
+
+                                        beforeShowDay: function (date) {
+                                           // Disable weekends, except for specific dates
+                                           var day = date.getDay();
+                                           var dateString = $.datepicker.formatDate('yy-mm-dd', date);
+                                           if (day === 0 || day === 6) {
+                                               if (allowedWeekends.includes(dateString)) {
+                                                   return [true];
+                                               } else {
+                                                   return [false];
+                                               }
+                                           } else if (disabledDates.includes(dateString)) {
+                                               return [false];
+                                           } else {
+                                               return [true];
+                                           }
+                                        },
+
+                                        onSelect: function (dateText, inst) {
+                                            // Show the delivery options select when a date is selected
+                                            $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
+
+                                            // Store the selected date in local storage
+                                            var selectedDate = $(this).datepicker('getDate');
+                                            var selectedDateFormatted = $.datepicker.formatDate('dd/mm/yy', selectedDate);
+
+                                            localStorage.setItem('selectedDate_<?php echo $cart_item_key; ?>', selectedDateFormatted);
+                                            // Reset the value of the delivery option select to its default value if the selected date has changed
+                                            if (previousSelectedDate !== selectedDateFormatted) {
+                                                $("#delivery_option_<?php echo $cart_item_key ?>").val($("#delivery_option_<?php echo $cart_item_key ?> option:first-child").val());
+                                                previousSelectedDate = selectedDateFormatted;
+                                            }
+                                            // Check if selected date is today and it's after 09:00
+                                            var currentDate = now;
+
+                                            localStorage.setItem('currentDate_<?php echo $cart_item_key; ?>', day + '/' + month + '/' + year);
+                                            localStorage.setItem('currentHours_<?php echo $cart_item_key; ?>', currentDate.getHours());
+                                            localStorage.setItem('currentMinutes_<?php echo $cart_item_key; ?>', currentDate.getMinutes());
+
+                                            hideDeliveryType();
+                                        }
+                                    };
+
+                                    // Select the input field for the datepicker
+                                    var $datePicker = $(".bulk_datepicker_<?php echo $cart_item_key; ?> input");
+
+                                    // Initialize the datepicker with the specified options
+                                    $($datePicker).datepicker(options);
+                                    // Add the readonly attribute to the input field to prevent the keyboard from being triggered on a mobile device
+                                    $datePicker.attr('readonly', 'readonly');
+
+                                    // Set the previously selected date as the default value for the datepicker
+                                    $datePicker.datepicker("setDate", selectedDate);
+
+                                }
+                            }).done(function (data) {
+                                showHideFields();
+                                hideDeliveryType();
+                            });
+
+                            function hideDeliveryType() {
+                                var currentDate = localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') : '';
+                                var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') : '';
+                                var localStoreCurrentHours = localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') : '';
+                                var localStoreCurrentMinutes = localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') : '';
+
+                                if (selectedDate === currentDate &&
+                                    localStoreCurrentHours >= 9 && localStoreCurrentMinutes >= 0) {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
+                                } else {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
+                                }
+                                // Check if selected date is today and it's after 12:00
+                                if (selectedDate === currentDate &&
+                                    localStoreCurrentHours >= 12 && localStoreCurrentMinutes >= 0) {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
+                                } else {
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
+                                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
+                                }
                             }
-                            // Check if selected date is today and it's after 09:00
-                            var currentDate = now;
+                        });
 
-                            localStorage.setItem('currentDate_<?php echo $cart_item_key; ?>', day + '/' + month + '/' + year);
-                            localStorage.setItem('currentHours_<?php echo $cart_item_key; ?>', currentDate.getHours());
-                            localStorage.setItem('currentMinutes_<?php echo $cart_item_key; ?>', currentDate.getMinutes());
+                    </script>
+                    <?php
+                    return  $output;
 
-                            hideDeliveryType();
-                        }
-                    };
+                    break;
 
-                    // Select the input field for the datepicker
-                    var $datePicker = $(".datepicker_<?php echo $cart_item_key; ?> input");
+                case 'postal':
 
-                    // Initialize the datepicker with the specified options
-                    $($datePicker).datepicker(options);
-                    // Add the readonly attribute to the input field to prevent the keyboard from being triggered on a mobile device
-                    $datePicker.attr('readonly', 'readonly');
+                    break;
 
-                    // Set the previously selected date as the default value for the datepicker
-                    $datePicker.datepicker("setDate", selectedDate);
+                // Add more cases for other product types if needed
 
-                    // Show the delivery options select if a date has been selected previously
-                    if (selectedDate) {
-                        $('.delivery-options-container_<?php echo $cart_item_key ?>').show();
-                    }
-                }
-            }).done(function (data) {
-                showHideFields();
-                hideDeliveryType();
-            });
+                default:
+                    // Handle other product types or leave this empty if needed
 
-            function hideDeliveryType() {
-                var currentDate = localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentDate_<?php echo $cart_item_key; ?>') : '';
-                var selectedDate = localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') ? localStorage.getItem('selectedDate_<?php echo $cart_item_key; ?>') : '';
-                var localStoreCurrentHours = localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentHours_<?php echo $cart_item_key; ?>') : '';
-                var localStoreCurrentMinutes = localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') ? localStorage.getItem('currentMinutes_<?php echo $cart_item_key; ?>') : '';
-
-                if (selectedDate === currentDate &&
-                    localStoreCurrentHours >= 9 && localStoreCurrentMinutes >= 0) {
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', true).hide();
-                } else {
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="am_delivery"]').prop('disabled', false).show();
-                }
-                // Check if selected date is today and it's after 12:00
-                if (selectedDate === currentDate &&
-                    localStoreCurrentHours >= 12 && localStoreCurrentMinutes >= 0) {
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', true).hide();
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', true).hide();
-                } else {
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="standard_delivery"]').prop('disabled', false).show();
-                    $('#delivery_option_<?php echo $cart_item_key ?> option[value="pm_delivery"]').prop('disabled', false).show();
-                }
+                    break;
             }
-        });
 
-    </script>
-    <?php
-    $output .= '<div class="product-price" data-original-price="' . $price . '"></div>';
-    $output = ob_get_clean();
-    // Return the product quantity with the suburb field
-    return $product_quantity . $output;
+        }
+    } else {
+        // Handle the case when the attribute terms are not available or there are no terms
+    }
+
+
 }
 
 /******
@@ -475,7 +703,7 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
 add_action('wp_footer', 'checkout_suburb_script');
 function checkout_suburb_script()
 {
-    // Only checkout page
+// Only checkout page
     if (is_checkout() && !is_wc_endpoint_url()) :
         WC()->session->__unset('chosen_suburb');
         ?>
@@ -484,7 +712,7 @@ function checkout_suburb_script()
                 $('form.checkout').on('change', '.suburb-dropdown', function () {
                     var cart_item_key = $(this).find('select').attr('name');
                     var suburb = $(this).find('select').val();
-                    localStorage.setItem('localChosenSuburb_'+cart_item_key, suburb);
+                    localStorage.setItem('localChosenSuburb_' + cart_item_key, suburb);
 
                     $.ajax({
                         type: 'POST',
@@ -504,7 +732,7 @@ function checkout_suburb_script()
                         }
                     }).done(function (data) {
                         $(document).ajaxComplete(function () {
-                            $('.suburb-dropdown select#'+cart_item_key).val(localStorage.getItem('localChosenSuburb_'+cart_item_key));
+                            $('.suburb-dropdown select#' + cart_item_key).val(localStorage.getItem('localChosenSuburb_' + cart_item_key));
                         });
                     });
                 });
@@ -680,7 +908,7 @@ function add_delivery_fee($cart)
 add_action('wp_footer', 'checkout_delivery_script');
 function checkout_delivery_script()
 {
-    // Only checkout page
+// Only checkout page
     if (is_checkout() && !is_wc_endpoint_url()) :
 
         WC()->session->__unset('chosen_delivery_option');
@@ -853,7 +1081,7 @@ function add_delivery_priority_fee($cart)
 add_action('woocommerce_checkout_create_order_line_item', 'add_custom_fields_to_order_items', 10, 4);
 function add_custom_fields_to_order_items($item, $cart_item_key, $values, $order)
 {
-    // Get the posted data from the checkout form
+// Get the posted data from the checkout form
     $posted_data = $_POST;
 
     if (isset($posted_data['item_first_name_' . $cart_item_key])) {
@@ -910,10 +1138,10 @@ function add_custom_fields_to_order_items($item, $cart_item_key, $values, $order
 add_action('woocommerce_checkout_process', 'validate_custom_fields');
 function validate_custom_fields()
 {
-    // Array to keep track of added notices
+// Array to keep track of added notices
     $added_notices = array();
 
-    // Loop through each cart item and validate the fields
+// Loop through each cart item and validate the fields
     foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
 
         $delivery_date = isset($_POST['item_delivery_date_' . $cart_item_key]) ? sanitize_text_field($_POST['item_delivery_date_' . $cart_item_key]) : '';
@@ -944,10 +1172,10 @@ function validate_custom_fields()
 add_action('woocommerce_checkout_process', 'validate_custom_delivery_fields');
 function validate_custom_delivery_fields()
 {
-    // Array to keep track of added notices
+// Array to keep track of added notices
     $added_notices = array();
 
-    // Loop through each cart item and validate the fields
+// Loop through each cart item and validate the fields
     foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
 
         $street_address = isset($_POST['item_street_address_' . $cart_item_key]) ? sanitize_text_field($_POST['item_street_address_' . $cart_item_key]) : '';
