@@ -50,7 +50,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     'class' => array('delivery-type'),
                     'options' => array(
                         '' => 'Select Delivery Type',
-                        'shop_pickup' => sprintf(__("Shop Pickup", $domain), strip_tags(wc_price(0))),
                         'standard_delivery' => sprintf(__("Standard Delivery", $domain), strip_tags(wc_price(0))),
                         'am_delivery' => sprintf(__("AM Specific Delivery (%s)", $domain), strip_tags(wc_price(15.00))),
                         'pm_delivery' => sprintf(__("PM Specific Delivery (%s)", $domain), strip_tags(wc_price(10.00))),
@@ -218,7 +217,6 @@ function add_suburb_checkout_field_to_product_list_item($product_quantity, $cart
                     'Yarrabah' => sprintf(__("Yarrabah (%s)", $domain), strip_tags(wc_price(45.00))),
                     'Yorkeys Knob' => sprintf(__("Yorkeys Knob (%s)", $domain), strip_tags(wc_price(27.50))),
                     'Yungaburra' => sprintf(__("Yungaburra (%s)", $domain), strip_tags(wc_price(40.00))),
-                    'Not Applicable' => 'Not Applicable',
                 ),
                 'label' => 'Select the suburb:',
                 'required' => true
@@ -546,9 +544,6 @@ function add_delivery_fee($cart)
         $selected_suburb = isset($chosen_suburb[$cart_item_key]) ? $chosen_suburb[$cart_item_key] : '';
         $cost = 0;
         switch ($selected_suburb) {
-            case 'Shop Pickup':
-                $cost = 0;
-                break;
             case 'Aeroglen':
             case 'Brinsmead':
             case 'Bungalow':
@@ -726,36 +721,8 @@ function checkout_delivery_script()
                             $("#" + cart_item_key + " option:first-child").attr("selected", "selected");
 
 
-                        } else if (delivery_option_value === 'shop_pickup') {
-
-                            $address.css('display', 'none');
-                            $extra_info.css('display', 'none');
-
-                            var placeholderText = 'Not Applicable'
-                            $street_address_field.val(placeholderText);
-                            $post_code_field.val(placeholderText);
-                            $phone_number_field.val(placeholderText);
-                            $delivery_date_field.val(placeholderText);
-
-                            $("#instruct_courier_to_" + cart_item_key + " option:last-child").attr("selected", "selected");
-                            $("#house_type_" + cart_item_key + " option:last-child").attr("selected", "selected");
-                            $("#" + cart_item_key + " option:last-child").attr("selected", "selected");
-
-                            // $.ajax({
-                            //     type: 'POST',
-                            //     url: wc_checkout_params.ajax_url,
-                            //     data: {
-                            //         action: 'disable_custom_fields_validation'
-                            //     },
-                            //     success: function (response) {
-                            //         console.log('Custom fields validation disabled');
-                            //     },
-                            //     error: function (xhr, status, error) {
-                            //         console.log('Error disabling custom fields validation');
-                            //     }
-                            // });
-
                         }
+
                     });
                 }
 
